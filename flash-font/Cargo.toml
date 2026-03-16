@@ -1,0 +1,7 @@
+[package]
+name = "flash-font"
+version = "0.1.0"
+edition = "2024"
+
+[dependencies]
+flash-font-injector = { path = "../flash-font-injector" }
