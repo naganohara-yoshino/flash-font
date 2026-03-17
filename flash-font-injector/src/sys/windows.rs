@@ -49,19 +49,15 @@ impl FontHandle for WindowsFontHandle {
             .map_err(|e| FontError::InvalidPath(e.to_string()))?
             .into_vec_with_nul();
 
-        Ok(Self { path_buf, path_w })
-    }
-
-    fn load(&mut self) -> FontResult<()> {
         unsafe {
-            let added = AddFontResourceW(PCWSTR(self.path_w.as_ptr()));
+            let added = AddFontResourceW(PCWSTR(path_w.as_ptr()));
             if added == 0 {
-                return Err(FontError::LoadFailed(self.path_buf.clone()));
+                return Err(FontError::LoadFailed(path_buf));
             }
             Self::broadcast_font_change();
         }
 
-        Ok(())
+        Ok(Self { path_buf, path_w })
     }
 
     fn unload(&mut self) -> FontResult<()> {

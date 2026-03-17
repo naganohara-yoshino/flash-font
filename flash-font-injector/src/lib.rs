@@ -16,14 +16,8 @@ pub(crate) trait FontHandle
 where
     Self: Sized,
 {
-    /// Creates a new handle from a font file path without loading the font.
+    /// Creates a handle and immediately loads the font into the operating system.
     fn new(path: impl AsRef<Path>) -> FontResult<Self>;
-
-    /// Loads the font into the operating system.
-    ///
-    /// Implementations **must** guard against double-loading: calling `load()`
-    /// on an already-loaded handle should be a no-op that returns `Ok(())`.
-    fn load(&mut self) -> FontResult<()>;
 
     /// Unloads the font from the operating system.
     ///
@@ -76,8 +70,7 @@ impl FontManager {
             return Ok(());
         }
 
-        let mut handle = NativeFontHandle::new(&canonical)?;
-        handle.load()?;
+        let handle = NativeFontHandle::new(&canonical)?;
         self.fonts.insert(canonical, handle);
         Ok(())
     }
