@@ -8,6 +8,7 @@ authors = ["Naganohara Yoshino <naganohara-yoshino@outlook.com>"]
 repository = "https://github.com/naganohara-yoshino/flash-font"
 documentation = "https://docs.rs/flash-font-injector"
 keywords = ["font", "windows", "font-loading", "font-injector"]
+readme = "README.md"
 
 [dependencies]
 thiserror = "2.0"
