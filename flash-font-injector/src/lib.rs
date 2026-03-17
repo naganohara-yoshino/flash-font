@@ -1,105 +1,166 @@
-use std::io;
+use std::collections::HashMap;
 use std::path::{Path, PathBuf};
 
-use thiserror::Error;
+use crate::error::{FontError, FontResult};
+use sys::NativeFontHandle;
+mod sys;
 
-pub(crate) mod sys;
+pub mod error;
 
-/// Represents errors that can occur during font loading or unloading operations.
-#[derive(Debug, Error)]
-pub enum FontLoadingError {
-    /// Indicates that the font failed to load into the system.
-    #[error("failed to load font: `{0}`")]
-    LoadFailed(PathBuf),
-    /// Indicates that the font failed to unload from the system.
-    #[error("failed to unload font: `{0}`")]
-    UnloadFailed(PathBuf),
-    /// Indicates that the provided font path could not be converted to a valid format.
-    #[error("invalid font path: `{0}`")]
-    InvalidPath(String),
-    /// Indicates that the provided font path could not be converted to an absolute path.
-    #[error("failed to get absolute path: `{0}`")]
-    AbsolutePathFailed(#[from] io::Error),
-    /// Indicates that the current platform is not supported.
-    #[error("unsupported platform")]
-    UnsupportedPlatform,
-}
-
-/// Result type for font operations.
-pub type FontLoadingResult<T> = Result<T, FontLoadingError>;
-
-/// A generic trait for platform-specific font loading operations.
-pub trait FontLoader {
-    /// The handle representing a loaded font resource.
-    type Handle;
-
-    /// Loads the specified font into the system globally.
-    fn load(path: &Path) -> FontLoadingResult<Self::Handle>;
-
-    /// Unloads the font from the system.
-    fn unload(handle: &mut Self::Handle) -> FontLoadingResult<()>;
-}
-
-/// A guard that strictly manages the lifecycle of a globally loaded font.
+/// A platform-specific handle to a temporarily loaded font resource.
 ///
-/// Ensures the font is loaded into the Windows system and automatically unloads it
-/// when the guard goes out of scope, unless explicitly unloaded beforehand.
-#[derive(Debug, Clone, Default)]
-pub struct GlobalFontGuard<L: FontLoader> {
-    handle: Option<L::Handle>,
+/// This trait is intentionally **not** public — downstream users interact with
+/// [`FontManager`] instead. Each platform provides its own implementation
+/// (e.g. `WindowsFontHandle` on Windows).
+pub(crate) trait FontHandle
+where
+    Self: Sized,
+{
+    /// Creates a new handle from a font file path without loading the font.
+    fn new(path: impl AsRef<Path>) -> FontResult<Self>;
+
+    /// Loads the font into the operating system.
+    ///
+    /// Implementations **must** guard against double-loading: calling `load()`
+    /// on an already-loaded handle should be a no-op that returns `Ok(())`.
+    fn load(&mut self) -> FontResult<()>;
+
+    /// Unloads the font from the operating system.
+    ///
+    /// Implementations **must** guard against double-unloading: calling
+    /// `unload()` on an already-unloaded handle should be a no-op that returns
+    /// `Ok(())`.
+    fn unload(&mut self) -> FontResult<()>;
+
+    /// Returns `true` if the font is currently loaded.
+    fn is_loaded(&self) -> bool;
 }
 
-impl<L: FontLoader> GlobalFontGuard<L> {
-    /// Loads the specified font into the system globally.
-    pub fn load(path: impl AsRef<Path>) -> FontLoadingResult<Self> {
-        let handle = L::load(path.as_ref())?;
-        Ok(Self {
-            handle: Some(handle),
-        })
-    }
+/// Manages the lifecycle of temporarily loaded system fonts.
+///
+/// Fonts are keyed by their canonical (absolute) path, ensuring each physical
+/// font file is loaded at most once. When the manager is dropped, all loaded
+/// fonts are automatically unloaded.
+///
+/// # Examples
+///
+/// ```no_run
+/// use flash_font_injector::FontManager;
+///
+/// let mut manager = FontManager::new();
+/// manager.load("path/to/font.ttf").unwrap();
+///
+/// assert!(manager.is_loaded("path/to/font.ttf"));
+///
+/// manager.unload("path/to/font.ttf").unwrap();
+/// ```
+#[derive(Debug, Default)]
+pub struct FontManager {
+    fonts: HashMap<PathBuf, NativeFontHandle>,
+}
 
-    /// Explicitly unloads the font before the guard goes out of scope.
-    pub fn unload(mut self) -> FontLoadingResult<()> {
-        let result = self.do_unload();
-
-        // Explicitly forget the guard to prevent `Drop` from unloading it a second time.
-        std::mem::forget(self);
-        result
-    }
-
-    fn do_unload(&mut self) -> FontLoadingResult<()> {
-        if let Some(mut handle) = self.handle.take() {
-            L::unload(&mut handle)
-        } else {
-            Ok(())
+impl FontManager {
+    /// Creates an empty `FontManager`.
+    pub fn new() -> Self {
+        Self {
+            fonts: HashMap::new(),
         }
     }
-}
 
-/// Ensures the font is unloaded when the guard goes out of scope.
-impl<L: FontLoader> Drop for GlobalFontGuard<L> {
-    fn drop(&mut self) {
-        let _ = self.do_unload();
+    /// Loads a font from the given file path into the system.
+    ///
+    /// The path is canonicalized before use, so relative paths are accepted.
+    /// If the same font file is already loaded, this is a no-op that returns
+    /// `Ok(())`.
+    pub fn load(&mut self, path: impl AsRef<Path>) -> FontResult<()> {
+        let canonical = path.as_ref().canonicalize()?;
+
+        if self.fonts.contains_key(&canonical) {
+            return Ok(());
+        }
+
+        let mut handle = NativeFontHandle::new(&canonical)?;
+        handle.load()?;
+        self.fonts.insert(canonical, handle);
+        Ok(())
+    }
+
+    /// Unloads a previously loaded font and removes it from the manager.
+    ///
+    /// The path is canonicalized before lookup. If the font is not currently
+    /// loaded, this is a no-op that returns `Ok(())`.
+    pub fn unload(&mut self, path: impl AsRef<Path>) -> FontResult<()> {
+        let canonical = path.as_ref().canonicalize()?;
+
+        if let Some(mut handle) = self.fonts.remove(&canonical) {
+            handle.unload()?;
+        }
+        Ok(())
+    }
+
+    /// Unloads all currently loaded fonts.
+    ///
+    /// Errors during individual unloads are printed to `stderr` but do not
+    /// prevent the remaining fonts from being unloaded.
+    pub fn unload_all(&mut self) {
+        for (path, mut handle) in self.fonts.drain() {
+            if let Err(e) = handle.unload() {
+                eprintln!("warning: failed to unload font {}: {e}", path.display());
+            }
+        }
+    }
+
+    /// Returns `true` if the font at the given path is currently loaded.
+    ///
+    /// Returns `false` if the path cannot be canonicalized.
+    pub fn is_loaded(&self, path: impl AsRef<Path>) -> bool {
+        path.as_ref()
+            .canonicalize()
+            .map(|p| self.fonts.contains_key(&p))
+            .unwrap_or(false)
+    }
+
+    /// Returns an iterator over the canonical paths of all loaded fonts.
+    pub fn loaded_fonts(&self) -> impl Iterator<Item = &Path> {
+        self.fonts.keys().map(|p| p.as_path())
+    }
+
+    /// Returns the number of currently loaded fonts.
+    pub fn len(&self) -> usize {
+        self.fonts.len()
+    }
+
+    /// Returns `true` if no fonts are currently loaded.
+    pub fn is_empty(&self) -> bool {
+        self.fonts.is_empty()
     }
 }
 
-/// A convenience type alias for the current platform's font guard.
-pub type SystemFontGuard = GlobalFontGuard<sys::NativeFontLoader>;
+impl Drop for FontManager {
+    fn drop(&mut self) {
+        self.unload_all();
+    }
+}
 
 #[cfg(test)]
 mod tests {
-
     use super::*;
 
     #[test]
-    fn test_load_and_unload() {
-        let font_path: &Path = Path::new("../fonts/方正少儿_GBK.ttf");
+    fn test_font_manager() {
+        let font_path = "../fonts/方正少儿_GBK.ttf";
 
-        let result = SystemFontGuard::load(font_path);
-        
-        // On unsupported platforms, this fails gracefully. On Windows, it unloads.
-        if let Ok(guard) = result {
-            guard.unload().unwrap();
-        }
+        let mut manager = FontManager::new();
+        manager.load(font_path).unwrap();
+        assert!(manager.is_loaded(font_path));
+        assert_eq!(manager.len(), 1);
+
+        // Loading the same font again should be a no-op.
+        manager.load(font_path).unwrap();
+        assert_eq!(manager.len(), 1);
+
+        manager.unload(font_path).unwrap();
+        assert!(!manager.is_loaded(font_path));
+        assert!(manager.is_empty());
     }
 }
