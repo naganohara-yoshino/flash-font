@@ -9,7 +9,7 @@ use crate::{FontError, FontHandle, FontResult};
 pub(crate) struct UnsupportedFontHandle;
 
 impl FontHandle for UnsupportedFontHandle {
-    fn inject(_path: impl AsRef<Path>) -> FontResult<Self> {
+    fn new(_path: impl AsRef<Path>) -> FontResult<Self> {
         Err(FontError::UnsupportedPlatform)
     }
 
