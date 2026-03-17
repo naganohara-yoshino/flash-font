@@ -16,7 +16,6 @@ use crate::{FontError, FontHandle, FontResult};
 pub(crate) struct WindowsFontHandle {
     path_buf: PathBuf,
     path_w: Vec<u16>,
-    is_loaded: bool,
 }
 
 impl WindowsFontHandle {
@@ -50,18 +49,10 @@ impl FontHandle for WindowsFontHandle {
             .map_err(|e| FontError::InvalidPath(e.to_string()))?
             .into_vec_with_nul();
 
-        Ok(Self {
-            path_buf,
-            path_w,
-            is_loaded: false,
-        })
+        Ok(Self { path_buf, path_w })
     }
 
     fn load(&mut self) -> FontResult<()> {
-        if self.is_loaded {
-            return Ok(());
-        }
-
         unsafe {
             let added = AddFontResourceW(PCWSTR(self.path_w.as_ptr()));
             if added == 0 {
@@ -70,15 +61,10 @@ impl FontHandle for WindowsFontHandle {
             Self::broadcast_font_change();
         }
 
-        self.is_loaded = true;
         Ok(())
     }
 
     fn unload(&mut self) -> FontResult<()> {
-        if !self.is_loaded {
-            return Ok(());
-        }
-
         unsafe {
             let removed = RemoveFontResourceW(PCWSTR(self.path_w.as_ptr()));
             if removed.0 == 0 {
@@ -87,11 +73,6 @@ impl FontHandle for WindowsFontHandle {
             Self::broadcast_font_change();
         }
 
-        self.is_loaded = false;
         Ok(())
-    }
-
-    fn is_loaded(&self) -> bool {
-        self.is_loaded
     }
 }

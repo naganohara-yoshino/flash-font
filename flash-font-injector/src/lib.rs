@@ -31,9 +31,6 @@ where
     /// `unload()` on an already-unloaded handle should be a no-op that returns
     /// `Ok(())`.
     fn unload(&mut self) -> FontResult<()>;
-
-    /// Returns `true` if the font is currently loaded.
-    fn is_loaded(&self) -> bool;
 }
 
 /// Manages the lifecycle of temporarily loaded system fonts.
