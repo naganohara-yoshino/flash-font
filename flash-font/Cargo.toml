@@ -6,5 +6,11 @@ edition = "2024"
 [dependencies]
 flash-font-injector = "0.2.0"
 jwalk = "0.8"
-rusqlite = { version = "0.39", features = ["bundled"] }
 ttf-parser = "0.25"
+libsqlite3-sys = { version = "0.30", features = ["bundled"] }
+diesel = { version = "2.3", features = [
+    "sqlite",
+    "returning_clauses_for_sqlite_3_35",
+] }
+rayon = "1.11"
+camino = "1.2"
