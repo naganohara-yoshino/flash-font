@@ -14,3 +14,6 @@ diesel = { version = "2.3", features = [
 ] }
 rayon = "1.11"
 camino = "1.2"
+anyhow = "1.0"
+walkdir = "2"
+memmap2 = "0.9"
