@@ -7,8 +7,8 @@ use rayon::prelude::*;
 use flash_font::{db, parser, schema};
 
 pub fn main() -> Result<(), Box<dyn std::error::Error>> {
-    let font_root = Utf8Path::new(r"G:\Data\fonts\");
-    let mut conn = db::establish_connection("fonts.db")?;
+    let font_root = Utf8Path::new(r"G:\Data\fonts\超级字体整合包 XZ\精简包\日文");
+    let mut conn = db::initialize_db_connection("fonts.db")?;
 
     // 所有操作包裹在一个事务中，保证 SQLite 在内存中极速执行
     conn.transaction::<_, Box<dyn std::error::Error>, _>(|tx| {

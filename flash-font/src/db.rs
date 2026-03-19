@@ -15,13 +15,6 @@ pub struct FontFamilyName {
     pub name: String,
 }
 
-// 映射临时表的插入结构（使用生命周期避免不必要的 String 克隆）
-#[derive(Insertable)]
-#[diesel(table_name = current_disk_paths)]
-pub struct TempFontPath<'a> {
-    pub path: &'a str,
-}
-
 // 用于原生 SQL 查询返回的结构
 #[derive(QueryableByName)]
 pub struct PathResult {
@@ -29,7 +22,9 @@ pub struct PathResult {
     pub path: String,
 }
 
-pub fn establish_connection(db_url: &str) -> Result<SqliteConnection, Box<dyn std::error::Error>> {
+pub fn initialize_db_connection(
+    db_url: &str,
+) -> Result<SqliteConnection, Box<dyn std::error::Error>> {
     let mut conn = SqliteConnection::establish(db_url)?;
 
     // 表1：存储唯一的文件路径
