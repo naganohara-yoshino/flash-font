@@ -15,17 +15,16 @@ pub struct FontFamilyName {
     pub name: String,
 }
 
-// 用于原生 SQL 查询返回的结构
-#[derive(QueryableByName)]
-pub struct PathResult {
-    #[diesel(sql_type = diesel::sql_types::Text)]
-    pub path: String,
-}
-
 pub fn initialize_db_connection(
     db_url: &str,
 ) -> Result<SqliteConnection, Box<dyn std::error::Error>> {
     let mut conn = SqliteConnection::establish(db_url)?;
+
+    diesel::sql_query("PRAGMA journal_mode = WAL;").execute(&mut conn)?;
+    diesel::sql_query("PRAGMA foreign_keys = ON;").execute(&mut conn)?;
+    diesel::sql_query("PRAGMA synchronous = NORMAL;").execute(&mut conn)?;
+    diesel::sql_query("PRAGMA temp_store = MEMORY;").execute(&mut conn)?;
+    diesel::sql_query("PRAGMA cache_size=-65536").execute(&mut conn)?; // 64MB cache
 
     // 表1：存储唯一的文件路径
     diesel::sql_query(
@@ -46,9 +45,6 @@ pub fn initialize_db_connection(
             )",
     )
     .execute(&mut conn)?;
-
-    diesel::sql_query("CREATE INDEX IF NOT EXISTS idx_font_files_path ON font_files(path)")
-        .execute(&mut conn)?;
 
     diesel::sql_query(
         "CREATE INDEX IF NOT EXISTS idx_font_family_names_file_id ON font_family_names(file_id)",

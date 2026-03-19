@@ -217,6 +217,7 @@ dependencies = [
  "rayon",
  "ttf-parser",
  "walkdir",
+ "windows-sys",
 ]
 
 [[package]]

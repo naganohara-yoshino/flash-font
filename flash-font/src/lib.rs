@@ -1,4 +1,4 @@
-use std::collections::HashSet;
+use std::{collections::HashSet, fs::File};
 
 use anyhow::Result;
 use camino::Utf8Path;
@@ -59,4 +59,28 @@ pub fn gather_and_clean_font_paths(
 
     // 5. 将真正需要新增解析的路径列表返回
     Ok(to_add)
+}
+
+pub fn open_for_mmap(path: &str) -> std::io::Result<File> {
+    #[cfg(target_os = "windows")]
+    {
+        use std::os::windows::fs::OpenOptionsExt;
+
+        use windows_sys::Win32::Storage::FileSystem::FILE_FLAG_SEQUENTIAL_SCAN;
+
+        std::fs::OpenOptions::new()
+            .read(true)
+            .custom_flags(FILE_FLAG_SEQUENTIAL_SCAN)
+            .open(path)
+    }
+    #[cfg(not(target_os = "windows"))]
+    {
+        let f = File::open(path)?;
+        #[cfg(target_os = "linux")]
+        unsafe {
+            use std::os::unix::io::AsRawFd;
+            libc::posix_fadvise(f.as_raw_fd(), 0, 0, libc::POSIX_FADV_WILLNEED);
+        }
+        Ok(f)
+    }
 }
