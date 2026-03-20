@@ -2,6 +2,13 @@
 name = "ass-font"
 version = "0.1.0"
 edition = "2024"
+description = "Extract fonts from ASS subtitles."
+license = "MIT OR Apache-2.0"
+authors = ["Naganohara Yoshino <naganohara-yoshino@outlook.com>"]
+repository = "https://github.com/naganohara-yoshino/flash-font"
+documentation = "https://docs.rs/ass-font"
+keywords = ["font", "ass", "subtitle", "extraction"]
+readme = "README.md"
 
 [dependencies]
 chardetng = "0.1.17"
