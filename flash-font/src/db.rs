@@ -15,9 +15,7 @@ pub struct FontFamilyName {
     pub name: String,
 }
 
-pub fn initialize_db_connection(
-    db_url: &str,
-) -> Result<SqliteConnection, Box<dyn std::error::Error>> {
+pub fn initialize_db_connection(db_url: &str) -> Result<SqliteConnection, anyhow::Error> {
     let mut conn = SqliteConnection::establish(db_url)?;
 
     diesel::sql_query("PRAGMA journal_mode = WAL;").execute(&mut conn)?;

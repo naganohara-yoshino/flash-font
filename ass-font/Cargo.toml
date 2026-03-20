@@ -1,0 +1,8 @@
+[package]
+name = "ass-font"
+version = "0.1.0"
+edition = "2024"
+
+[dependencies]
+chardetng = "0.1.17"
+encoding_rs = "0.8.34"

@@ -1,38 +1,42 @@
+use std::{sync::mpsc, thread};
+
 use anyhow::Error;
 use camino::Utf8Path;
 use diesel::prelude::*;
-use flash_font::{db, open_for_mmap, parser, schema};
+use flash_font::{
+    db::{self},
+    open_for_mmap, parser, schema,
+};
 use rayon::prelude::*;
 
-pub fn main() -> Result<(), Box<dyn std::error::Error>> {
+pub fn main() -> Result<(), Error> {
     let font_root = Utf8Path::new(r"G:\Data\fonts\");
     let mut conn = db::initialize_db_connection("fonts.db")?;
 
     conn.transaction::<_, Error, _>(|tx| {
         let new_paths = flash_font::gather_and_clean_font_paths(tx, font_root)?;
-
         println!("✨ Found {} new fonts to parse.", new_paths.len());
 
         if new_paths.is_empty() {
             return Ok(());
         }
 
-        // 4. 分块并发解析与落盘
-        for chunk in new_paths.chunks(20000) {
-            // 并发读取并解析
-            let parsed_data: Vec<(String, Vec<String>)> = chunk
-                .par_iter()
-                .filter_map(|path| {
-                    let data_file = open_for_mmap(path).ok()?;
-                    let data = unsafe { memmap2::Mmap::map(&data_file).ok()? };
-                    let families = parser::get_font_family_names(&data);
+        let (sender, receiver) = mpsc::sync_channel(10000);
 
-                    Some((path.clone(), families.into_iter().collect()))
-                })
-                .collect();
+        thread::scope(|s| -> Result<(), Error> {
+            s.spawn(|| {
+                new_paths.into_par_iter().for_each_with(sender, |ch, path| {
+                    if let Ok(data_file) = open_for_mmap(&path)
+                        && let Ok(data) = unsafe { memmap2::Mmap::map(&data_file) }
+                    {
+                        let families = parser::get_font_family_names(&data);
+                        // 将解析结果发送给主线程
+                        let _ = ch.send((path, families.into_iter().collect::<Vec<_>>()));
+                    }
+                });
+            });
 
-            // 写入数据库
-            for (path, families) in parsed_data {
+            for (path, families) in receiver {
                 // 获取生成的主键 ID
                 let file_id: i32 = diesel::insert_into(schema::font_files::table)
                     .values(db::FontFile { path })
@@ -46,7 +50,9 @@ pub fn main() -> Result<(), Box<dyn std::error::Error>> {
                         .execute(tx)?;
                 }
             }
-        }
+
+            Ok(())
+        })?;
 
         Ok(())
     })?;
