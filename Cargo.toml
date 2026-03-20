@@ -1,9 +1,10 @@
 [workspace]
 resolver = "3"
-members = ["ass-font","flash-font", "flash-font-injector"]
+members = ["ass-font", "flash-font", "flash-font-injector"]
 
 [patch.crates-io]
 flash-font-injector = { path = "./flash-font-injector" }
+ass-font = { path = "./ass-font" }
 
 [profile.release]
 lto = "fat"
