@@ -210,6 +210,15 @@ dependencies = [
 ]
 
 [[package]]
+name = "flash-font-ass"
+version = "0.1.0"
+dependencies = [
+ "ass-font",
+ "camino",
+ "flash-font-injector",
+]
+
+[[package]]
 name = "flash-font-injector"
 version = "0.3.0"
 dependencies = [

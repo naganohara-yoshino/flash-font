@@ -1,0 +1,9 @@
+[package]
+name = "flash-font-ass"
+version = "0.1.0"
+edition = "2024"
+
+[dependencies]
+camino = "1.2"
+flash-font-injector = "0.3.0"
+ass-font = "0.1.0"
