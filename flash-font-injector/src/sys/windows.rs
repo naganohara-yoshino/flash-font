@@ -1,4 +1,4 @@
-use std::path::{Path, PathBuf};
+use camino::Utf8Path;
 
 use widestring::WideCString;
 use windows::Win32::Foundation::{LPARAM, WPARAM};
@@ -8,21 +8,19 @@ use windows::Win32::UI::WindowsAndMessaging::{
 };
 use windows::core::PCWSTR;
 
-use crate::{FontError, FontHandle, FontResult};
+use crate::{FontError, FontRegistry, FontResult};
 
 /// A Windows-specific font handle that uses the GDI `AddFontResourceW` /
 /// `RemoveFontResourceW` APIs to temporarily load a font into the system.
 #[derive(Debug, Default)]
-pub(crate) struct WindowsFontHandle {
-    path_buf: PathBuf,
-    path_w: Vec<u16>,
-}
+pub(crate) struct WinRegistry;
 
-impl WindowsFontHandle {
+impl WinRegistry {
     /// Broadcasts `WM_FONTCHANGE` to all top-level windows so they can pick up
     /// the font change. Prints a warning to `stderr` if the broadcast times
     /// out (e.g. because a window is hung).
-    fn broadcast_font_change() {
+    #[allow(dead_code)]
+    pub(crate) fn broadcast_font_change() -> Result<(), ()> {
         let result = unsafe {
             SendMessageTimeoutW(
                 HWND_BROADCAST,
@@ -36,39 +34,37 @@ impl WindowsFontHandle {
         };
 
         if result.0 == 0 {
-            eprintln!("warning: WM_FONTCHANGE broadcast timed out or failed");
-        }
-    }
-}
-
-impl FontHandle for WindowsFontHandle {
-    fn new(path: impl AsRef<Path>) -> FontResult<Self> {
-        let path_buf = path.as_ref().canonicalize()?;
-
-        let path_w = WideCString::from_os_str(path_buf.as_os_str())
-            .map_err(|e| FontError::InvalidPath(e.to_string()))?
-            .into_vec_with_nul();
-
-        unsafe {
-            let added = AddFontResourceW(PCWSTR(path_w.as_ptr()));
-            if added == 0 {
-                return Err(FontError::LoadFailed(path_buf));
-            }
-            Self::broadcast_font_change();
-        }
-
-        Ok(Self { path_buf, path_w })
-    }
-
-    fn unload(&mut self) -> FontResult<()> {
-        unsafe {
-            let removed = RemoveFontResourceW(PCWSTR(self.path_w.as_ptr()));
-            if removed.0 == 0 {
-                return Err(FontError::UnloadFailed(self.path_buf.clone()));
-            }
-            Self::broadcast_font_change();
+            return Err(());
         }
 
         Ok(())
+    }
+}
+
+impl FontRegistry for WinRegistry {
+    fn add_font(path: &Utf8Path) -> FontResult<()> {
+        let path_w = WideCString::from_str(path.as_str())
+            .map_err(|e| FontError::MalformedPath(e.to_string()))?
+            .into_vec_with_nul();
+
+        let added = unsafe { AddFontResourceW(PCWSTR(path_w.as_ptr())) };
+
+        match added {
+            0 => Err(FontError::LoadFailed(path.to_path_buf())),
+            _ => Ok(()),
+        }
+    }
+
+    fn remove_font(path: &Utf8Path) -> FontResult<()> {
+        let path_w = WideCString::from_str(path.as_str())
+            .map_err(|e| FontError::MalformedPath(e.to_string()))?
+            .into_vec_with_nul();
+
+        let removed = unsafe { RemoveFontResourceW(PCWSTR(path_w.as_ptr())) };
+
+        match removed.0 {
+            0 => Err(FontError::UnloadFailed(path.to_path_buf())),
+            _ => Ok(()),
+        }
     }
 }

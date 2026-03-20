@@ -1,62 +1,32 @@
-use std::{sync::mpsc, thread};
+use std::io;
 
-use anyhow::Error;
-use camino::Utf8Path;
-use diesel::prelude::*;
-use flash_font::{
-    db::{self},
-    open_for_mmap, parser, schema,
-};
-use rayon::prelude::*;
+use camino::{Utf8Path, Utf8PathBuf};
+use flash_font_injector::{FontManager, FontManagerConfig};
 
-pub fn main() -> Result<(), Error> {
-    let font_root = Utf8Path::new(r"G:\Data\fonts\");
-    let mut conn = db::initialize_db_connection("fonts.db")?;
+pub fn main() {
+    let s = ass_font::read_text_auto(
+        r"E:\qb_downloads\[VCB-Studio] Sora yori mo Tooi Basho [Ma10p_1080p]\[VCB-Studio] Sora yori mo Tooi Basho [01][Ma10p_1080p][x265_flac_aac].ass",
+    )
+    .unwrap();
 
-    conn.transaction::<_, Error, _>(|tx| {
-        let new_paths = flash_font::gather_and_clean_font_paths(tx, font_root)?;
-        println!("✨ Found {} new fonts to parse.", new_paths.len());
+    let db_url = r"F:\Coding\fonts.db";
 
-        if new_paths.is_empty() {
-            return Ok(());
-        }
+    flash_font::update_font_database(Utf8Path::new(r"G:\Data\fonts"), db_url).unwrap();
 
-        let (sender, receiver) = mpsc::sync_channel(10000);
+    let to_load = ass_font::extract_fonts(&s)
+        .iter()
+        .filter_map(|f| flash_font::select_font_by_name(f, db_url).ok())
+        .filter_map(|v| v.first().cloned())
+        .map(Utf8PathBuf::from)
+        .collect::<Vec<_>>();
 
-        thread::scope(|s| -> Result<(), Error> {
-            s.spawn(|| {
-                new_paths.into_par_iter().for_each_with(sender, |ch, path| {
-                    if let Ok(data_file) = open_for_mmap(&path)
-                        && let Ok(data) = unsafe { memmap2::Mmap::map(&data_file) }
-                    {
-                        let families = parser::get_font_family_names(&data);
-                        // 将解析结果发送给主线程
-                        let _ = ch.send((path, families.into_iter().collect::<Vec<_>>()));
-                    }
-                });
-            });
+    let mut manager = FontManager::new(FontManagerConfig {
+        keep_loaded_fonts: false,
+    });
 
-            for (path, families) in receiver {
-                // 获取生成的主键 ID
-                let file_id: i32 = diesel::insert_into(schema::font_files::table)
-                    .values(db::FontFile { path })
-                    .returning(schema::font_files::id)
-                    .get_result(tx)?;
+    manager.load_all(to_load).unwrap();
 
-                // 将提取出的名字写入
-                for name in families {
-                    diesel::insert_into(schema::font_family_names::table)
-                        .values(db::FontFamilyName { file_id, name })
-                        .execute(tx)?;
-                }
-            }
-
-            Ok(())
-        })?;
-
-        Ok(())
-    })?;
-
-    println!("✅ Database fully updated!");
-    Ok(())
+    println!("回车退出");
+    let mut s = String::new();
+    io::stdin().read_line(&mut s).unwrap();
 }

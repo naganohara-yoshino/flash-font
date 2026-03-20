@@ -17,6 +17,7 @@ camino = "1.2"
 anyhow = "1.0"
 walkdir = "2"
 memmap2 = "0.9"
+ass-font = "0.1.0"
 
 [target.'cfg(target_os = "windows")'.dependencies.windows-sys]
 version = "0.61"

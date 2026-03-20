@@ -1,9 +1,9 @@
 #[cfg(target_os = "windows")]
 mod windows;
 #[cfg(target_os = "windows")]
-pub(crate) use windows::WindowsFontHandle as NativeFontHandle;
+pub(crate) use windows::WinRegistry as NativeFontRegistry;
 
 #[cfg(not(target_os = "windows"))]
 mod unsupported;
 #[cfg(not(target_os = "windows"))]
-pub(crate) use unsupported::UnsupportedFontHandle as NativeFontHandle;
+pub(crate) use unsupported::UnsupportedFontRegistry as NativeFontRegistry;

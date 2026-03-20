@@ -1,8 +1,9 @@
-use std::{collections::HashSet, fs::File};
+use std::{collections::HashSet, fs::File, sync::mpsc, thread};
 
-use anyhow::Result;
+use anyhow::{Error, Result};
 use camino::Utf8Path;
 use diesel::prelude::*;
+use rayon::prelude::*;
 
 pub mod db;
 pub mod parser;
@@ -31,31 +32,17 @@ pub fn gather_and_clean_font_paths(
     let to_add: Vec<String> = disk_paths.difference(&db_paths).cloned().collect();
 
     // 4. 清理数据库中失效的记录
-    if !to_delete.is_empty() {
-        println!(
-            "🗑️  Found {} missing font records. Deleting...",
-            to_delete.len()
-        );
-        let mut deleted_count = 0;
-
-        // 分批删除，防止数据量太大撑爆 SQLite IN(...) 的 32766 参数上限
-        for chunk in to_delete.chunks(10000) {
-            deleted_count += diesel::delete(
-                schema::font_files::table.filter(schema::font_files::path.eq_any(chunk)),
-            )
+    // 分批删除，防止数据量太大撑爆 SQLite IN(...) 的 32766 参数上限
+    for chunk in to_delete.chunks(10000) {
+        diesel::delete(schema::font_files::table.filter(schema::font_files::path.eq_any(chunk)))
             .execute(tx)?;
-        }
-
-        println!("🗑️  Deleted {} missing font records.", deleted_count);
-
-        // 级联清理孤儿 family name 记录
-        diesel::sql_query(
-            "DELETE FROM font_family_names WHERE file_id NOT IN (SELECT id FROM font_files)",
-        )
-        .execute(tx)?;
     }
 
-    println!("✨ Found {} new fonts to parse.", to_add.len());
+    // 级联清理孤儿 family name 记录
+    diesel::sql_query(
+        "DELETE FROM font_family_names WHERE file_id NOT IN (SELECT id FROM font_files)",
+    )
+    .execute(tx)?;
 
     // 5. 将真正需要新增解析的路径列表返回
     Ok(to_add)
@@ -83,4 +70,65 @@ pub fn open_for_mmap(path: &str) -> std::io::Result<File> {
         }
         Ok(f)
     }
+}
+
+pub fn update_font_database(font_root: &Utf8Path, db_url: &str) -> Result<usize, Error> {
+    let mut conn = db::initialize_db_connection(db_url)?;
+
+    conn.transaction::<_, Error, _>(|tx| {
+        let new_paths = gather_and_clean_font_paths(tx, font_root)?;
+        let new_paths_len = new_paths.len();
+
+        if new_paths.is_empty() {
+            return Ok(0);
+        }
+
+        let (sender, receiver) = mpsc::sync_channel(10000);
+
+        thread::scope(|s| -> Result<(), Error> {
+            s.spawn(|| {
+                new_paths.into_par_iter().for_each_with(sender, |ch, path| {
+                    if let Ok(data_file) = open_for_mmap(&path)
+                        && let Ok(data) = unsafe { memmap2::Mmap::map(&data_file) }
+                    {
+                        let families = parser::get_font_family_names(&data);
+                        // 将解析结果发送给主线程
+                        let _ = ch.send((path, families.into_iter().collect::<Vec<_>>()));
+                    }
+                });
+            });
+
+            for (path, families) in receiver {
+                // 获取生成的主键 ID
+                let file_id: i32 = diesel::insert_into(schema::font_files::table)
+                    .values(db::FontFile { path })
+                    .returning(schema::font_files::id)
+                    .get_result(tx)?;
+
+                // 将提取出的名字写入
+                for name in families {
+                    diesel::insert_into(schema::font_family_names::table)
+                        .values(db::FontFamilyName { file_id, name })
+                        .execute(tx)?;
+                }
+            }
+
+            Ok(())
+        })?;
+
+        Ok(new_paths_len)
+    })
+}
+
+pub fn select_font_by_name(name: &str, db_url: &str) -> Result<Vec<String>, Error> {
+    let mut conn = db::initialize_db_connection(db_url)?;
+    let fonts: Vec<String> = schema::font_files::table
+        .inner_join(
+            schema::font_family_names::table
+                .on(schema::font_files::id.eq(schema::font_family_names::file_id)),
+        )
+        .filter(schema::font_family_names::name.eq(name))
+        .select(schema::font_files::path)
+        .load(&mut conn)?;
+    Ok(fonts)
 }

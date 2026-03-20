@@ -236,6 +236,7 @@ name = "flash-font"
 version = "0.1.0"
 dependencies = [
  "anyhow",
+ "ass-font",
  "camino",
  "diesel",
  "flash-font-injector",
@@ -252,6 +253,8 @@ dependencies = [
 name = "flash-font-injector"
 version = "0.2.0"
 dependencies = [
+ "camino",
+ "rayon",
  "thiserror",
  "widestring",
  "windows",

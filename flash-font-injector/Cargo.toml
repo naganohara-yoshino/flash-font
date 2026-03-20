@@ -12,6 +12,8 @@ readme = "README.md"
 
 [dependencies]
 thiserror = "2.0"
+rayon = "1.11"
+camino = "1.2"
 
 [target.'cfg(target_os = "windows")'.dependencies]
 widestring = "1.2"

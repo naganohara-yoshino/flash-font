@@ -1,30 +1,17 @@
-use std::collections::HashMap;
-use std::path::{Path, PathBuf};
+use std::collections::HashSet;
 
-use crate::error::{FontError, FontResult};
-use sys::NativeFontHandle;
-mod sys;
+use camino::{Utf8Path, Utf8PathBuf};
+use rayon::prelude::*;
+
+use error::{FontError, FontResult};
+use sys::NativeFontRegistry;
 
 pub mod error;
+mod sys;
 
-/// A platform-specific handle to a temporarily loaded font resource.
-///
-/// This trait is intentionally **not** public — downstream users interact with
-/// [`FontManager`] instead. Each platform provides its own implementation
-/// (e.g. `WindowsFontHandle` on Windows).
-pub(crate) trait FontHandle
-where
-    Self: Sized,
-{
-    /// Creates a handle and immediately loads the font into the operating system.
-    fn new(path: impl AsRef<Path>) -> FontResult<Self>;
-
-    /// Unloads the font from the operating system.
-    ///
-    /// Implementations **must** guard against double-unloading: calling
-    /// `unload()` on an already-unloaded handle should be a no-op that returns
-    /// `Ok(())`.
-    fn unload(&mut self) -> FontResult<()>;
+pub(crate) trait FontRegistry {
+    fn add_font(path: &Utf8Path) -> FontResult<()>;
+    fn remove_font(path: &Utf8Path) -> FontResult<()>;
 }
 
 /// Manages the lifecycle of temporarily loaded system fonts.
@@ -47,14 +34,29 @@ where
 /// ```
 #[derive(Debug, Default)]
 pub struct FontManager {
-    fonts: HashMap<PathBuf, NativeFontHandle>,
+    loaded_fonts: HashSet<Utf8PathBuf>,
+    config: FontManagerConfig,
+}
+
+#[derive(Debug, Clone)]
+pub struct FontManagerConfig {
+    pub keep_loaded_fonts: bool,
+}
+
+impl Default for FontManagerConfig {
+    fn default() -> Self {
+        Self {
+            keep_loaded_fonts: true,
+        }
+    }
 }
 
 impl FontManager {
     /// Creates an empty `FontManager`.
-    pub fn new() -> Self {
+    pub fn new(config: FontManagerConfig) -> Self {
         Self {
-            fonts: HashMap::new(),
+            loaded_fonts: HashSet::new(),
+            config,
         }
     }
 
@@ -63,15 +65,35 @@ impl FontManager {
     /// The path is canonicalized before use, so relative paths are accepted.
     /// If the same font file is already loaded, this is a no-op that returns
     /// `Ok(())`.
-    pub fn load(&mut self, path: impl AsRef<Path>) -> FontResult<()> {
-        let canonical = path.as_ref().canonicalize()?;
-
-        if self.fonts.contains_key(&canonical) {
-            return Ok(());
+    /// Expect full path
+    pub fn load(&mut self, path: &Utf8Path) -> FontResult<()> {
+        if !self.loaded_fonts.contains(path) {
+            NativeFontRegistry::add_font(path)?;
+            self.loaded_fonts.insert(path.to_path_buf());
         }
 
-        let handle = NativeFontHandle::new(&canonical)?;
-        self.fonts.insert(canonical, handle);
+        Ok(())
+    }
+
+    pub fn load_all(&mut self, paths: Vec<Utf8PathBuf>) -> FontResult<()> {
+        let to_load: Vec<_> = paths
+            .into_iter()
+            .filter(|path| !self.loaded_fonts.contains(path))
+            .collect();
+
+        let loaded: Vec<_> = to_load
+            .into_par_iter()
+            .filter_map(|path| {
+                if NativeFontRegistry::add_font(&path).is_ok() {
+                    Some(path)
+                } else {
+                    None
+                }
+            })
+            .collect();
+
+        self.loaded_fonts.extend(loaded);
+
         Ok(())
     }
 
@@ -79,56 +101,50 @@ impl FontManager {
     ///
     /// The path is canonicalized before lookup. If the font is not currently
     /// loaded, this is a no-op that returns `Ok(())`.
-    pub fn unload(&mut self, path: impl AsRef<Path>) -> FontResult<()> {
-        let canonical = path.as_ref().canonicalize()?;
-
-        if let Some(mut handle) = self.fonts.remove(&canonical) {
-            handle.unload()?;
+    pub fn unload(&mut self, path: &Utf8Path) -> FontResult<()> {
+        if self.loaded_fonts.remove(path) {
+            NativeFontRegistry::remove_font(path)?;
         }
+
         Ok(())
     }
 
-    /// Unloads all currently loaded fonts.
-    ///
-    /// Errors during individual unloads are printed to `stderr` but do not
-    /// prevent the remaining fonts from being unloaded.
-    pub fn unload_all(&mut self) {
-        for (path, mut handle) in self.fonts.drain() {
-            if let Err(e) = handle.unload() {
-                eprintln!("warning: failed to unload font {}: {e}", path.display());
-            }
-        }
-    }
+    pub fn unload_all(&mut self) -> FontResult<()> {
+        let to_unload: Vec<_> = self.loaded_fonts.drain().collect();
 
-    /// Returns `true` if the font at the given path is currently loaded.
-    ///
-    /// Returns `false` if the path cannot be canonicalized.
-    pub fn is_loaded(&self, path: impl AsRef<Path>) -> bool {
-        path.as_ref()
-            .canonicalize()
-            .map(|p| self.fonts.contains_key(&p))
-            .unwrap_or(false)
+        let errs: Vec<_> = to_unload
+            .into_par_iter()
+            .filter(|path| NativeFontRegistry::remove_font(path).is_err())
+            .collect();
+
+        if !errs.is_empty() {
+            return Err(FontError::UnloadFailed(errs[0].clone()));
+        }
+
+        Ok(())
     }
 
     /// Returns an iterator over the canonical paths of all loaded fonts.
-    pub fn loaded_fonts(&self) -> impl Iterator<Item = &Path> {
-        self.fonts.keys().map(|p| p.as_path())
+    pub fn loaded_fonts(&self) -> impl Iterator<Item = &Utf8Path> {
+        self.loaded_fonts.iter().map(|p| p.as_path())
     }
 
     /// Returns the number of currently loaded fonts.
     pub fn len(&self) -> usize {
-        self.fonts.len()
+        self.loaded_fonts.len()
     }
 
     /// Returns `true` if no fonts are currently loaded.
     pub fn is_empty(&self) -> bool {
-        self.fonts.is_empty()
+        self.loaded_fonts.is_empty()
     }
 }
 
 impl Drop for FontManager {
     fn drop(&mut self) {
-        self.unload_all();
+        if !self.config.keep_loaded_fonts {
+            let _ = self.unload_all();
+        }
     }
 }
 
@@ -138,11 +154,14 @@ mod tests {
 
     #[test]
     fn test_font_manager() {
-        let font_path = "../fonts/方正少儿_GBK.ttf";
+        let font_path = Utf8Path::new("../fonts/方正少儿_GBK.ttf");
 
-        let mut manager = FontManager::new();
+        let mut manager = FontManager::new(FontManagerConfig {
+            keep_loaded_fonts: false,
+        });
+
         manager.load(font_path).unwrap();
-        assert!(manager.is_loaded(font_path));
+        assert!(manager.loaded_fonts.contains(font_path));
         assert_eq!(manager.len(), 1);
 
         // Loading the same font again should be a no-op.
@@ -150,7 +169,7 @@ mod tests {
         assert_eq!(manager.len(), 1);
 
         manager.unload(font_path).unwrap();
-        assert!(!manager.is_loaded(font_path));
+        assert!(!manager.loaded_fonts.contains(font_path));
         assert!(manager.is_empty());
     }
 }
