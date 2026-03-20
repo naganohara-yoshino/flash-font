@@ -25,10 +25,10 @@ pub(crate) trait FontRegistry {
 /// ```no_run
 /// use flash_font_injector::FontManager;
 ///
-/// let mut manager = FontManager::new();
+/// let mut manager = FontManager::default();
 /// manager.load("path/to/font.ttf").unwrap();
 ///
-/// assert!(manager.is_loaded("path/to/font.ttf"));
+/// assert!(manager.len() > 0);
 ///
 /// manager.unload("path/to/font.ttf").unwrap();
 /// ```

@@ -2,22 +2,29 @@
 name = "flash-font"
 version = "0.1.0"
 edition = "2024"
+description = "Cache fonts in sqlite"
+license = "MIT OR Apache-2.0"
+authors = ["Naganohara Yoshino <naganohara-yoshino@outlook.com>"]
+repository = "https://github.com/naganohara-yoshino/flash-font"
+documentation = "https://docs.rs/flash-font"
+keywords = ["font", "sqlite"]
+readme = "README.md"
 
 [dependencies]
-flash-font-injector = "0.2.0"
+flash-font-injector = "0.3.0"
 jwalk = "0.8"
 ttf-parser = "0.25"
 libsqlite3-sys = { version = "0.30", features = ["bundled"] }
-diesel = { version = "2.3", features = [
-    "sqlite",
-    "returning_clauses_for_sqlite_3_35",
-] }
 rayon = "1.11"
 camino = "1.2"
-anyhow = "1.0"
 walkdir = "2"
 memmap2 = "0.9"
 ass-font = "0.1.0"
+thiserror = "2.0"
+
+[dependencies.diesel]
+version = "2.3"
+features = ["sqlite", "returning_clauses_for_sqlite_3_35"]
 
 [target.'cfg(target_os = "windows")'.dependencies.windows-sys]
 version = "0.61"

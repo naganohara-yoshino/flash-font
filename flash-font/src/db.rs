@@ -1,6 +1,8 @@
-use super::schema::*;
 use diesel::prelude::*;
 use diesel::sqlite::SqliteConnection;
+
+use super::schema::*;
+use crate::error::AppResult;
 
 #[derive(Insertable)]
 #[diesel(table_name = font_files)]
@@ -15,7 +17,7 @@ pub struct FontFamilyName {
     pub name: String,
 }
 
-pub fn initialize_db_connection(db_url: &str) -> Result<SqliteConnection, anyhow::Error> {
+pub fn initialize_db_connection(db_url: &str) -> AppResult<SqliteConnection> {
     let mut conn = SqliteConnection::establish(db_url)?;
 
     diesel::sql_query("PRAGMA journal_mode = WAL;").execute(&mut conn)?;
