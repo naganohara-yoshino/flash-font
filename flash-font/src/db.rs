@@ -6,18 +6,18 @@ use crate::error::AppResult;
 
 #[derive(Insertable)]
 #[diesel(table_name = font_files)]
-pub struct FontFile {
+pub(crate) struct FontFile {
     pub path: String,
 }
 
 #[derive(Insertable)]
 #[diesel(table_name = font_family_names)]
-pub struct FontFamilyName {
+pub(crate) struct FontFamilyName {
     pub file_id: i32,
     pub name: String,
 }
 
-pub fn initialize_db_connection(db_url: &str) -> AppResult<SqliteConnection> {
+pub(crate) fn initialize_db_connection(db_url: &str) -> AppResult<SqliteConnection> {
     let mut conn = SqliteConnection::establish(db_url)?;
 
     diesel::sql_query("PRAGMA journal_mode = WAL;").execute(&mut conn)?;

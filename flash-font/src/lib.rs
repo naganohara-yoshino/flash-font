@@ -13,8 +13,8 @@ use crate::error::{AppError, AppResult};
 
 mod db;
 pub mod error;
-mod parser;
-mod scanner;
+pub mod parser;
+pub mod scanner;
 mod schema;
 
 /// Synchronizes the font files in the database with the files currently on disk.
@@ -22,7 +22,7 @@ mod schema;
 /// This function identifies files that have been removed from the disk and deletes their
 /// corresponding records from the database. It then returns a list of new file paths
 /// that need to be parsed and added.
-pub fn gather_and_clean_font_paths(
+fn gather_and_clean_font_paths(
     tx: &mut diesel::SqliteConnection,
     font_root: &Utf8Path,
 ) -> AppResult<Vec<String>> {
@@ -64,7 +64,7 @@ pub fn gather_and_clean_font_paths(
 ///
 /// On Windows, it uses `FILE_FLAG_SEQUENTIAL_SCAN` to hint to the OS that
 /// the file will be read sequentially.
-pub fn open_for_mmap(path: &str) -> io::Result<File> {
+fn open_for_mmap(path: &str) -> io::Result<File> {
     #[cfg(target_os = "windows")]
     {
         use std::os::windows::fs::OpenOptionsExt;

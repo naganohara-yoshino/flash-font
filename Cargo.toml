@@ -5,6 +5,7 @@ members = ["ass-font", "flash-font", "flash-font-ass", "flash-font-injector"]
 [patch.crates-io]
 flash-font-injector = { path = "./flash-font-injector" }
 ass-font = { path = "./ass-font" }
+flash-font = { path = "./flash-font" }
 
 [profile.release]
 lto = "fat"
