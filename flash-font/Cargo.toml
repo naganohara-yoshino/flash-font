@@ -11,15 +11,12 @@ keywords = ["font", "sqlite"]
 readme = "README.md"
 
 [dependencies]
-flash-font-injector = "0.3.0"
-jwalk = "0.8"
 ttf-parser = "0.25"
 libsqlite3-sys = { version = "0.30", features = ["bundled"] }
 rayon = "1.11"
 camino = "1.2"
 walkdir = "2"
 memmap2 = "0.9"
-ass-font = "0.1.0"
 thiserror = "2.0"
 
 [dependencies.diesel]

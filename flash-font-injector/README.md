@@ -1,5 +1,4 @@
 # Flash Font Injector
-==================
 
 Flash Font Injector is a library for temporarily loading system fonts.  
 
