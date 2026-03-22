@@ -1,6 +1,6 @@
 [package]
 name = "ass-font"
-version = "0.1.0"
+version = "0.2.0"
 edition = "2024"
 description = "Extract fonts from ASS subtitles."
 license = "MIT OR Apache-2.0"
@@ -11,5 +11,6 @@ keywords = ["font", "ass", "subtitle", "extraction"]
 readme = "README.md"
 
 [dependencies]
+camino = "1.2.2"
 chardetng = "0.1.17"
 encoding_rs = "0.8.34"

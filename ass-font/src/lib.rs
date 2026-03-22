@@ -1,10 +1,11 @@
 //! A library for extracting fonts used in ASS (Advanced SubStation Alpha) subtitle files.
 
+use camino::Utf8Path;
 use chardetng::EncodingDetector;
 use std::{collections::HashSet, fs, io};
 
 /// Reads a file into a `String`, automatically detecting and decoding its character encoding.
-pub fn read_text_auto(path: &str) -> io::Result<String> {
+pub fn read_text_auto(path: &Utf8Path) -> io::Result<String> {
     let bytes = fs::read(path)?;
     let mut det = EncodingDetector::new();
     det.feed(&bytes, true);
