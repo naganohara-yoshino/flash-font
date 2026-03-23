@@ -1,0 +1,79 @@
+{
+    // Use IntelliSense to learn about possible attributes.
+    // Hover to view descriptions of existing attributes.
+    // For more information, visit: https://go.microsoft.com/fwlink/?linkid=830387
+    "version": "0.2.0",
+    "configurations": [
+        {
+            "name": "Debug unit tests in library 'ass_font'",
+            "type": "lldb",
+            "request": "launch",
+            "cargo": {
+                "args": [
+                    "test",
+                    "--package=ass-font"
+                ]
+            }
+        },
+        {
+            "name": "Debug unit tests in library 'flash_font'",
+            "type": "lldb",
+            "request": "launch",
+            "cargo": {
+                "args": [
+                    "test",
+                    "--package=flash-font"
+                ]
+            }
+        },
+        {
+            "name": "Debug unit tests in library 'flash_font_ass'",
+            "type": "lldb",
+            "request": "launch",
+            "cargo": {
+                "args": [
+                    "test",
+                    "--package=flash-font-ass"
+                ]
+            }
+        },
+        {
+            "name": "Debug executable 'flash-font-ass'",
+            "type": "lldb",
+            "request": "launch",
+            "cargo": {
+                "args": [
+                    "run",
+                    "--bin=flash-font-ass",
+                    "--package=flash-font-ass",
+                    "--",
+                    "init"
+                ]
+            },
+            "args": []
+        },
+        {
+            "name": "Debug unit tests in executable 'flash-font-ass'",
+            "type": "lldb",
+            "request": "launch",
+            "cargo": {
+                "args": [
+                    "test",
+                    "--bin=flash-font-ass",
+                    "--package=flash-font-ass"
+                ]
+            }
+        },
+        {
+            "name": "Debug unit tests in library 'flash_font_injector'",
+            "type": "lldb",
+            "request": "launch",
+            "cargo": {
+                "args": [
+                    "test",
+                    "--package=flash-font-injector"
+                ]
+            }
+        }
+    ]
+}
