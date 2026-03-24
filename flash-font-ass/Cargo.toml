@@ -1,6 +1,6 @@
 [package]
 name = "flash-font-ass"
-version = "0.1.0"
+version = "0.1.1"
 edition = "2024"
 description = "A font loading library for ASS subtitles."
 license = "MIT OR Apache-2.0"
@@ -11,9 +11,9 @@ keywords = ["font", "ass", "subtitle", "font-loading"]
 readme = "README.md"
 
 [dependencies]
-flash-font-injector = "0.4.0"
-ass-font = "0.2.0"
-flash-font = "0.1.0"
+flash-font-injector = "0.5.0"
+ass-font = "0.2.1"
+flash-font = "0.1.1"
 etcetera = "0.11.0"
 anyhow = "1.0.102"
 inquire = "0.9.4"
