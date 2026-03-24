@@ -1,6 +1,6 @@
 # flash-font
 
-[![License: MIT/Apache-2.0](https://img.shields.io/badge/license-MIT%2FApache--2.0-blue.svg)](https://github.com/naganohara-yoshino/flash-font)
+[![License: MIT/Apache-2.0](https://img.shields.io/badge/license-MIT%2FApache--2.0-blue.svg)](../LICENSE-MIT)
 [![Cargo](https://img.shields.io/crates/v/flash-font.svg)](https://crates.io/crates/flash-font)
 [![Documentation](https://docs.rs/flash-font/badge.svg)](https://docs.rs/flash-font)
 
@@ -53,8 +53,6 @@ fn main() -> anyhow::Result<()> {
 2.  **Cleaner**: Compares disk files with database records, removing orphans and identifying new files.
 3.  **Parser**: Extracts font family names in parallel using multiple threads and memory mapping.
 4.  **Database**: Stores mappings between file paths and family names in a normalized SQLite schema.
-
-
 
 ## License
 

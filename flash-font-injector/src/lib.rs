@@ -39,8 +39,11 @@ pub struct FontManager {
     config: FontManagerConfig,
 }
 
+/// Configuration for the `FontManager`.
 #[derive(Debug, Clone)]
 pub struct FontManagerConfig {
+    /// Determines whether loaded fonts should remain in the system after the `FontManager` is dropped.
+    /// If `true`, fonts stay loaded. If `false`, they are automatically unloaded.
     pub keep_loaded_fonts: bool,
 }
 
@@ -76,6 +79,10 @@ impl FontManager {
         Ok(())
     }
 
+    /// Loads multiple fonts in parallel.
+    ///
+    /// Returns an error if any of the fonts failed to load, though some fonts might
+    /// still have been loaded successfully.
     pub fn load_all(&mut self, paths: Vec<Utf8PathBuf>) -> FontResult<()> {
         let to_load: Vec<_> = paths
             .into_iter()
@@ -126,6 +133,10 @@ impl FontManager {
         Ok(())
     }
 
+    /// Unloads all currently loaded fonts in parallel.
+    ///
+    /// The manager's internal tracking is cleared even if some unloads fail.
+    /// Returns the first encountered error if unloading any font fails.
     pub fn unload_all(&mut self) -> FontResult<()> {
         let to_unload: Vec<_> = self.loaded_fonts.drain().collect();
 
