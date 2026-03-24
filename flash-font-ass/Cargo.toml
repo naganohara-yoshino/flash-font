@@ -11,7 +11,7 @@ keywords = ["font", "ass", "subtitle", "font-loading"]
 readme = "README.md"
 
 [dependencies]
-flash-font-injector = "0.3.0"
+flash-font-injector = "0.4.0"
 ass-font = "0.2.0"
 flash-font = "0.1.0"
 etcetera = "0.11.0"
