@@ -3,6 +3,7 @@ use clap::{Parser, Subcommand};
 
 #[derive(Parser, Debug)]
 #[command(version, about)]
+/// A CLI tool for loading ASS subtitle fonts
 pub struct Cli {
     #[command(subcommand)]
     pub(crate) command: Commands,

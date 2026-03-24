@@ -57,8 +57,7 @@ fn init(
     let toml = toml::to_string_pretty(&config)?;
     fs::write(&config_file, toml)?;
 
-    // 给用户一个操作成功的正反馈
-    println!("✅ 初始化成功！配置文件已保存至:\n  {}", config_file);
+    println!("✅ Success! Config file saved to:\n  {}", config_file);
     Ok(())
 }
 
@@ -77,10 +76,9 @@ pub fn run(cli: Cli) -> Result<()> {
 
     match cli.command {
         Commands::Load(args) => {
-            // 使用 with_context，如果找不到文件，会给出明确的补救建议
             let config_toml = fs::read_to_string(&config_file).with_context(|| {
                 format!(
-                    "找不到配置文件: {config_file}\n请先运行 `flash-font-ass init` 设置字体目录。"
+                    "❌ Can't find config file: {config_file}\nPlease run `flash-font-ass init` first."
                 )
             })?;
 
@@ -88,8 +86,8 @@ pub fn run(cli: Cli) -> Result<()> {
             load_fonts(&config, &args.subtitle)?;
         }
         Commands::Init => {
-            // 用 ? 替代 if let Ok，这样如果用户在终端按 Ctrl+C，程序能干净地退出而不是强行继续
-            let font_root = Text::new("请输入字体库根目录 (Font root):").prompt()?;
+            let font_root =
+                Text::new("Please enter the full path to the font root directory:").prompt()?;
             init(font_root.into(), strategy, config_file)?;
         }
     }
