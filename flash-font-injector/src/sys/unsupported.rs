@@ -1,19 +1,15 @@
-use std::path::Path;
+use camino::Utf8Path;
 
-use crate::{FontError, FontHandle, FontResult};
+use crate::{FontError, FontRegistry, FontResult};
 
-/// Stub font handle for unsupported platforms.
-///
-/// All operations return [`FontError::UnsupportedPlatform`].
 #[derive(Debug, Default)]
-pub(crate) struct UnsupportedFontHandle;
+pub(crate) struct UnsupportedFontRegistry;
 
-impl FontHandle for UnsupportedFontHandle {
-    fn new(_path: impl AsRef<Path>) -> FontResult<Self> {
+impl FontRegistry for UnsupportedFontHandle {
+    fn add_font(path: &Utf8Path) -> FontResult<()> {
         Err(FontError::UnsupportedPlatform)
     }
-
-    fn unload(&mut self) -> FontResult<()> {
+    fn remove_font(path: &Utf8Path) -> FontResult<()> {
         Err(FontError::UnsupportedPlatform)
     }
 }
