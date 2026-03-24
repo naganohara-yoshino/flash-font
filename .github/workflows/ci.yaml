@@ -1,0 +1,38 @@
+name: CI - Format, Lint, Test
+
+on:
+    push:
+        branches:
+            - "**"
+    pull_request:
+
+permissions:
+    contents: read
+
+jobs:
+    ci:
+        runs-on: ubuntu-latest
+
+        env:
+            RUSTFLAGS: "--cfg ci"
+
+        steps:
+            # 1. Checkout code
+            - uses: actions/checkout@v4
+
+            # 2. Install Rust + rustfmt + clippy
+            - uses: dtolnay/rust-toolchain@stable
+              with:
+                  components: rustfmt, clippy
+
+            # 3. --- FORMAT CHECK ---
+            - name: Check code formatting
+              run: cargo fmt --all -- --check
+
+            # 4. --- CLIPPY LINT ---
+            - name: Run clippy
+              run: cargo clippy --all-targets --all-features -- -D warnings
+
+            # 5. --- TEST ---
+            - name: Run tests
+              run: cargo test --all --all-features

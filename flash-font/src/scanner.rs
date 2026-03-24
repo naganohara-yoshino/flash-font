@@ -21,6 +21,7 @@ mod tests {
     use super::*;
 
     #[test]
+    #[cfg(not(ci))]
     fn test_scan_font_directory() {
         let root = Utf8Path::new(r"G:\Data\fonts");
         let paths = scan_font_directory(&root);
