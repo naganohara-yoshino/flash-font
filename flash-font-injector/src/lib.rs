@@ -165,12 +165,12 @@ impl Drop for FontManager {
     }
 }
 
-#[cfg(test)]
+#[cfg(all(test, not(ci)))]
 mod tests {
+
     use super::*;
 
     #[test]
-    #[cfg(not(ci))]
     fn test_font_manager() {
         let font_path = Utf8Path::new("../fonts/方正少儿_GBK.ttf");
 
