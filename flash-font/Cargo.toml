@@ -27,5 +27,8 @@ features = ["sqlite", "returning_clauses_for_sqlite_3_35"]
 version = "0.61"
 features = ["Win32_Storage_FileSystem"]
 
+[target.'cfg(target_os = "linux")'.dependencies.libc]
+version = "0.2"
+
 [lints.rust]
 unexpected_cfgs = { level = "warn", check-cfg = ['cfg(ci)'] }

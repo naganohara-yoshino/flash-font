@@ -411,6 +411,7 @@ version = "0.1.0"
 dependencies = [
  "camino",
  "diesel",
+ "libc",
  "libsqlite3-sys",
  "memmap2",
  "rayon",
