@@ -2,6 +2,13 @@
 name = "flash-font-ass"
 version = "0.1.0"
 edition = "2024"
+description = "A font loading library for ASS subtitles."
+license = "MIT OR Apache-2.0"
+authors = ["Naganohara Yoshino <naganohara-yoshino@outlook.com>"]
+repository = "https://github.com/naganohara-yoshino/flash-font"
+documentation = "https://docs.rs/flash-font-ass"
+keywords = ["font", "ass", "subtitle", "font-loading"]
+readme = "README.md"
 
 [dependencies]
 flash-font-injector = "0.3.0"
