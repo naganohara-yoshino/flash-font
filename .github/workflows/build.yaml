@@ -29,7 +29,7 @@ jobs:
 
         steps:
             - name: Checkout
-              uses: actions/checkout@v4
+              uses: actions/checkout@v6
 
             # Build binary for target
             - name: Build binary
@@ -42,7 +42,7 @@ jobs:
 
             # Release packaging + GitHub release upload
             - name: Publish artifacts and release
-              uses: houseabsolute/actions-rust-release@v0
+              uses: houseabsolute/actions-rust-release@v1
               with:
                   executable-name: flash-font-ass
                   target: ${{ matrix.platform.target }}
