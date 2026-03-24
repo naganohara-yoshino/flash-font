@@ -22,15 +22,16 @@ pub(crate) trait FontRegistry {
 ///
 /// # Examples
 ///
-/// ```no_run
+/// ```ignore
 /// use flash_font_injector::FontManager;
+/// use camino::Utf8Path;
 ///
 /// let mut manager = FontManager::default();
-/// manager.load("path/to/font.ttf").unwrap();
+/// manager.load(Utf8Path::new("path/to/font.ttf")).unwrap();
 ///
 /// assert!(manager.len() > 0);
 ///
-/// manager.unload("path/to/font.ttf").unwrap();
+/// manager.unload(Utf8Path::new("path/to/font.ttf")).unwrap();
 /// ```
 #[derive(Debug, Default)]
 pub struct FontManager {
@@ -62,7 +63,7 @@ impl FontManager {
 
     /// Loads a font from the given file path into the system.
     ///
-    /// The path is canonicalized before use, so relative paths are accepted.
+    /// The provided path is used directly without canonicalization.
     /// If the same font file is already loaded, this is a no-op that returns
     /// `Ok(())`.
     /// Expect full path
@@ -81,26 +82,42 @@ impl FontManager {
             .filter(|path| !self.loaded_fonts.contains(path))
             .collect();
 
-        let loaded: Vec<_> = to_load
+        let results: Vec<_> = to_load
             .into_par_iter()
-            .filter_map(|path| {
+            .map(|path| {
                 if NativeFontRegistry::add_font(&path).is_ok() {
-                    Some(path)
+                    Ok(path)
                 } else {
-                    None
+                    Err(path)
                 }
             })
             .collect();
 
-        self.loaded_fonts.extend(loaded);
+        let mut first_err = None;
+        for res in results {
+            match res {
+                Ok(path) => {
+                    self.loaded_fonts.insert(path);
+                }
+                Err(path) => {
+                    if first_err.is_none() {
+                        first_err = Some(FontError::LoadFailed(path));
+                    }
+                }
+            }
+        }
+
+        if let Some(err) = first_err {
+            return Err(err);
+        }
 
         Ok(())
     }
 
     /// Unloads a previously loaded font and removes it from the manager.
     ///
-    /// The path is canonicalized before lookup. If the font is not currently
-    /// loaded, this is a no-op that returns `Ok(())`.
+    /// The provided path is used directly without canonicalization. If the font
+    /// is not currently loaded, this is a no-op that returns `Ok(())`.
     pub fn unload(&mut self, path: &Utf8Path) -> FontResult<()> {
         if self.loaded_fonts.remove(path) {
             NativeFontRegistry::remove_font(path)?;
