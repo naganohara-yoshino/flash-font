@@ -11,6 +11,8 @@ use crate::cli::*;
 
 pub mod cli;
 
+const DB_FILE: &str = "fonts.db";
+
 #[derive(Deserialize, Serialize)]
 struct Config {
     db_url: String,
@@ -45,10 +47,14 @@ fn init(
 ) -> Result<()> {
     let data_dir = Utf8PathBuf::try_from(strategy.data_dir())?;
 
-    fs::create_dir_all(config_file.parent().unwrap())?;
+    fs::create_dir_all(
+        config_file
+            .parent()
+            .ok_or_else(|| anyhow::anyhow!("config_file must have a parent"))?,
+    )?;
     fs::create_dir_all(&data_dir)?;
 
-    let db_path = data_dir.join("fonts.db");
+    let db_path = data_dir.join(DB_FILE);
     let config = Config {
         db_url: db_path.into_string(),
         font_root,

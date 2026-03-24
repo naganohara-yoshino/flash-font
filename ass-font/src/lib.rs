@@ -152,7 +152,8 @@ fn scan_inline_tags(text: &str, fonts: &mut HashSet<String>) {
 
 /// Inserts a font name into the collection, removing whitespace and the `@` prefix for vertical typography if present.
 fn add_font(fonts: &mut HashSet<String>, raw: &str) {
-    let name = raw.trim().strip_prefix('@').unwrap_or(raw.trim());
+    let trimmed = raw.trim();
+    let name = trimmed.strip_prefix('@').unwrap_or(trimmed);
     if !name.is_empty() {
         fonts.insert(name.to_owned());
     }
