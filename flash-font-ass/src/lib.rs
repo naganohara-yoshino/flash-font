@@ -11,12 +11,18 @@ use crate::cli::*;
 
 pub mod cli;
 
+/// The name of the SQLite database file for fonts.
+const DB_FILE: &str = "fonts.db";
+
+/// Configuration data for the `flash-font-ass` CLI.
 #[derive(Deserialize, Serialize)]
 struct Config {
     db_url: String,
     font_root: Utf8PathBuf,
 }
 
+/// Parses the subtitle file to extract fonts, updates the font database,
+/// and temporarily loads the needed fonts.
 fn load_fonts(config: &Config, ass_path: impl AsRef<Utf8Path>) -> anyhow::Result<()> {
     let s = ass_font::read_text_auto(ass_path.as_ref())?;
 
@@ -38,6 +44,7 @@ fn load_fonts(config: &Config, ass_path: impl AsRef<Utf8Path>) -> anyhow::Result
     Ok(())
 }
 
+/// Initializes the configuration file and directory structure.
 fn init(
     font_root: Utf8PathBuf,
     strategy: impl AppStrategy,
@@ -45,10 +52,14 @@ fn init(
 ) -> Result<()> {
     let data_dir = Utf8PathBuf::try_from(strategy.data_dir())?;
 
-    fs::create_dir_all(config_file.parent().unwrap())?;
+    fs::create_dir_all(
+        config_file
+            .parent()
+            .ok_or_else(|| anyhow::anyhow!("config_file must have a parent"))?,
+    )?;
     fs::create_dir_all(&data_dir)?;
 
-    let db_path = data_dir.join("fonts.db");
+    let db_path = data_dir.join(DB_FILE);
     let config = Config {
         db_url: db_path.into_string(),
         font_root,
@@ -69,6 +80,7 @@ fn app_strategy() -> Result<impl AppStrategy> {
     })?)
 }
 
+/// Main entry point for the CLI operations.
 pub fn run(cli: Cli) -> Result<()> {
     let strategy = app_strategy()?;
     let config_dir = Utf8PathBuf::try_from(strategy.config_dir())?;

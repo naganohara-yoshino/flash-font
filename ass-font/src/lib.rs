@@ -1,5 +1,8 @@
-//! A library for extracting fonts used in ASS (Advanced SubStation Alpha) subtitle files.
-
+//! A library for extracting font names used in ASS (Advanced SubStation Alpha) subtitle files.
+//! 
+//! This crate provides functionality to detect the text encoding of an ASS file, read it, and 
+//! extract all required fonts correctly by parsing both the Styles section and inline font 
+//! overrides within Dialogue events (e.g. `\fnFontName`).
 use camino::Utf8Path;
 use chardetng::EncodingDetector;
 use std::{collections::HashSet, fs, io};
@@ -152,7 +155,8 @@ fn scan_inline_tags(text: &str, fonts: &mut HashSet<String>) {
 
 /// Inserts a font name into the collection, removing whitespace and the `@` prefix for vertical typography if present.
 fn add_font(fonts: &mut HashSet<String>, raw: &str) {
-    let name = raw.trim().strip_prefix('@').unwrap_or(raw.trim());
+    let trimmed = raw.trim();
+    let name = trimmed.strip_prefix('@').unwrap_or(trimmed);
     if !name.is_empty() {
         fonts.insert(name.to_owned());
     }
