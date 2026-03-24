@@ -42,7 +42,7 @@ jobs:
 
       # Release packaging + GitHub release upload
       - name: Publish artifacts and release
-        uses: houseabsolute/actions-rust-release@v1
+        uses: houseabsolute/actions-rust-release@v0
         with:
           executable-name: flash-font-ass
           target: ${{ matrix.platform.target }}
