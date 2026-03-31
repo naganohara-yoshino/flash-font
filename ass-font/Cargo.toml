@@ -12,5 +12,5 @@ readme = "README.md"
 
 [dependencies]
 camino = "1.2.2"
-chardetng = "0.1.17"
+chardetng = "1.0.0"
 encoding_rs = "0.8.34"
