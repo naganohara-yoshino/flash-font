@@ -13,7 +13,7 @@ readme = "README.md"
 [dependencies]
 ttf-parser = "0.25"
 libsqlite3-sys = { version = "0.30", features = ["bundled"] }
-rayon = "1.11"
+rayon = "1.12"
 camino = "1.2"
 walkdir = "2"
 memmap2 = "0.9"
