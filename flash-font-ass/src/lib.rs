@@ -108,15 +108,14 @@ pub fn run(cli: Cli) -> Result<()> {
 
             println!("{}", report.message());
 
-            if config.should_show_notifications {
-                if let Err(error) = Notification::new()
+            if config.should_show_notifications
+                && let Err(error) = Notification::new()
                     .summary("ASS Fonts")
                     .body(&report.message())
                     .timeout(Timeout::Never)
                     .show()
-                {
-                    eprintln!("Warning: failed to show notification: {error}");
-                }
+            {
+                eprintln!("Warning: failed to show notification: {error}");
             }
         }
     }
