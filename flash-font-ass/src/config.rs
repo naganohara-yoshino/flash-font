@@ -9,6 +9,7 @@ use serde::{Deserialize, Serialize};
 pub(crate) struct Config {
     pub(crate) db_url: String,
     pub(crate) font_root: Utf8PathBuf,
+    pub(crate) should_show_notifications: bool,
 }
 
 impl Config {

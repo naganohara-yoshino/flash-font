@@ -9,7 +9,6 @@ use notify_rust::{Notification, Timeout};
 
 use crate::cli::*;
 use crate::config::*;
-use crate::font::LoadReport;
 
 pub mod cli;
 mod config;
@@ -75,30 +74,25 @@ fn prompt_for_font_root() -> Result<Utf8PathBuf> {
     Ok(valid_font_root)
 }
 
-fn show_notification(report: &LoadReport) {
-    if let Err(error) = Notification::new()
-        .summary("ASS Fonts")
-        .body(&report.message())
-        .timeout(Timeout::Never)
-        .show()
-    {
-        eprintln!("Warning: failed to show notification: {error}");
-    }
-}
-
 /// Main entry point for the CLI operations.
 pub fn run(cli: Cli) -> Result<()> {
     let paths = AppPaths::determine()?;
 
     match cli.command {
         Commands::Init => {
+            fs::create_dir_all(&paths.data_dir)?;
+
             let valid_font_root = prompt_for_font_root()?;
 
-            fs::create_dir_all(&paths.data_dir)?;
+            let should_show_notifications =
+                inquire::Confirm::new("Do you want notifications when fonts are loaded?")
+                    .with_default(false)
+                    .prompt()?;
 
             let config = Config {
                 db_url: paths.data_dir.join(DB_FILE).into(),
                 font_root: valid_font_root,
+                should_show_notifications,
             };
             config.save(&paths.config_file)?;
 
@@ -113,7 +107,17 @@ pub fn run(cli: Cli) -> Result<()> {
             let report = font::load_fonts(&config, subtitle)?;
 
             println!("{}", report.message());
-            show_notification(&report);
+
+            if config.should_show_notifications {
+                if let Err(error) = Notification::new()
+                    .summary("ASS Fonts")
+                    .body(&report.message())
+                    .timeout(Timeout::Never)
+                    .show()
+                {
+                    eprintln!("Warning: failed to show notification: {error}");
+                }
+            }
         }
     }
 
