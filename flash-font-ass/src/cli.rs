@@ -1,9 +1,9 @@
 use camino::Utf8PathBuf;
 use clap::{Parser, Subcommand};
 
+/// A CLI tool for loading ASS subtitle fonts
 #[derive(Parser, Debug)]
 #[command(version, about)]
-/// A CLI tool for loading ASS subtitle fonts
 pub struct Cli {
     #[command(subcommand)]
     pub(crate) command: Commands,
@@ -19,6 +19,6 @@ pub(crate) enum Commands {
 
 #[derive(Parser, Debug)]
 pub(crate) struct LoadArgs {
-    #[arg(short, long)]
+    #[arg(short, long, value_name = "ASS_FILE")]
     pub(crate) subtitle: Utf8PathBuf,
 }
