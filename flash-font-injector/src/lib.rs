@@ -12,6 +12,12 @@ mod sys;
 pub(crate) trait FontRegistry {
     fn add_font(path: &Utf8Path) -> FontResult<()>;
     fn remove_font(path: &Utf8Path) -> FontResult<()>;
+    fn is_font_available(family_name: &str) -> FontResult<bool>;
+}
+
+/// Returns whether a font family is already available to the system.
+pub fn is_font_available(family_name: &str) -> FontResult<bool> {
+    NativeFontRegistry::is_font_available(family_name)
 }
 
 /// Manages the lifecycle of temporarily loaded system fonts.
@@ -200,5 +206,11 @@ mod tests {
         manager.unload(font_path).unwrap();
         assert!(!manager.loaded_fonts.contains(font_path));
         assert!(manager.is_empty());
+    }
+
+    #[cfg(target_os = "windows")]
+    #[test]
+    fn test_is_font_available_for_system_font() {
+        assert!(is_font_available("Arial").unwrap());
     }
 }

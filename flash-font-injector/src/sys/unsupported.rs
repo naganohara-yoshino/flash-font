@@ -12,4 +12,7 @@ impl FontRegistry for UnsupportedFontRegistry {
     fn remove_font(_path: &Utf8Path) -> FontResult<()> {
         Err(FontError::UnsupportedPlatform)
     }
+    fn is_font_available(_family_name: &str) -> FontResult<bool> {
+        Err(FontError::UnsupportedPlatform)
+    }
 }

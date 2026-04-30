@@ -13,6 +13,9 @@ pub enum FontError {
     /// The provided font path could not be converted to a valid format.
     #[error("malformed font path: `{0}`")]
     MalformedPath(String),
+    /// The provided font family name could not be converted to a valid format.
+    #[error("malformed font family name: `{0}`")]
+    MalformedFontName(String),
     /// The current platform is not supported.
     #[error("unsupported platform")]
     UnsupportedPlatform,

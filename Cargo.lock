@@ -669,7 +669,7 @@ dependencies = [
  "clap",
  "etcetera",
  "flash-font",
- "flash-font-injector",
+ "flash-font-injector 0.5.1",
  "inquire",
  "notify-rust",
  "serde",
@@ -679,6 +679,19 @@ dependencies = [
 [[package]]
 name = "flash-font-injector"
 version = "0.5.1"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "448d3e5a336ad4bdd301ca037c0269abc262848f2f8112480f3ee57e0f64c34a"
+dependencies = [
+ "camino",
+ "rayon",
+ "thiserror",
+ "widestring",
+ "windows 0.62.2",
+]
+
+[[package]]
+name = "flash-font-injector"
+version = "0.6.0"
 dependencies = [
  "camino",
  "rayon",
