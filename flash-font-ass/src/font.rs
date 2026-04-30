@@ -1,6 +1,6 @@
 use anyhow::{Context, Result};
 use camino::{Utf8Path, Utf8PathBuf};
-use flash_font_injector::FontManager;
+use flash_font_injector::{FontManager, is_font_available};
 
 use crate::config::Config;
 
@@ -33,6 +33,11 @@ fn resolve_fonts(font_names: &[String], db_url: &str) -> Result<FontSelection> {
             missing.push(font_name.clone());
         }
     }
+
+    let missing = missing
+        .into_iter()
+        .filter(|font_name| !matches!(is_font_available(font_name), Ok(true)))
+        .collect();
 
     Ok(FontSelection {
         valid_paths,
