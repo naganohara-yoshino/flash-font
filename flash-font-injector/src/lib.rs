@@ -84,7 +84,7 @@ impl FontManager {
     /// Returns an error if any of the fonts failed to load, though some fonts might
     /// still have been loaded successfully.
     pub fn load_all(&mut self, paths: Vec<Utf8PathBuf>) -> FontResult<()> {
-        let to_load: Vec<_> = paths
+        let to_load: HashSet<_> = paths
             .into_iter()
             .filter(|path| !self.loaded_fonts.contains(path))
             .collect();

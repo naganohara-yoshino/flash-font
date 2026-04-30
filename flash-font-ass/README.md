@@ -34,7 +34,7 @@ Once configured, you can load fonts for an ASS file before turning on your video
 flash-font-ass load --subtitle "path/to/subtitle.ass"
 ```
 
-The fonts will remain loaded in the Windows system font table as long as the `flash-font-ass` process stays alive, or they will be automatically unloaded when it terminates (subject to the `FontManagerConfig` behavior).
+The fonts will remain loaded in the Windows system font table as long as the system is not rebooted.
 
 ## License
 

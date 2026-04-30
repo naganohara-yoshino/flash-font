@@ -94,16 +94,15 @@ fn open_for_mmap(path: &str) -> io::Result<File> {
 /// parses new font files in parallel to extract family names, and inserts them
 /// into the database.
 ///
-/// Returns the number of new font files added.
-pub fn update_font_database(font_root: &Utf8Path, db_url: &str) -> AppResult<usize> {
+/// Best effort, fs open / mmap errors will be skipped.
+pub fn update_font_database(font_root: &Utf8Path, db_url: &str) -> AppResult<()> {
     let mut conn = db::initialize_db_connection(db_url)?;
 
     conn.transaction::<_, AppError, _>(|tx| {
         let new_paths = gather_and_clean_font_paths(tx, font_root)?;
-        let new_paths_len = new_paths.len();
 
         if new_paths.is_empty() {
-            return Ok(0);
+            return Ok(());
         }
 
         let (sender, receiver) = mpsc::sync_channel(10000);
@@ -139,7 +138,7 @@ pub fn update_font_database(font_root: &Utf8Path, db_url: &str) -> AppResult<usi
             Ok(())
         })?;
 
-        Ok(new_paths_len)
+        Ok(())
     })
 }
 
