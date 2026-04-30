@@ -4,7 +4,7 @@
 
 `ass-font` is a fast parser for extracting font names from ASS (Advanced SubStation Alpha) subtitle files. It correctly handles section headers, detects encoded files automatically, and scans both standard font definitions and inline dialogue font overrides (e.g., `\fnFontName`).
 
-Used by [flash-font](https://github.com/naganohara-yoshino/flash-font) to prepare a list of fonts that need to be injected before playback.
+Used by [flash-font-ass](https://github.com/naganohara-yoshino/flash-font) to prepare a list of fonts that need to be injected before playback.
 
 ## Features
 
@@ -36,10 +36,11 @@ assert_eq!(fonts, vec!["Arial", "Open Sans"]);
 Or read the file directly using auto-detected encoding:
 
 ```rust
-use ass_font::read_text_auto;
+use ass_font::{extract_fonts, read_text_auto};
+use camino::Utf8Path;
 
 // read_text_auto automatically detects charset and returns a String
-let text = read_text_auto("path/to/subtitle.ass".into()).unwrap();
+let text = read_text_auto(Utf8Path::new("path/to/subtitle.ass")).unwrap();
 let fonts = extract_fonts(&text);
 ```
 

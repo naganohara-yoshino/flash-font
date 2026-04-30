@@ -19,7 +19,7 @@ Add this to your `Cargo.toml`:
 
 ```toml
 [dependencies]
-flash-font = "0.1"
+flash-font = "0.2"
 camino = "1.2"
 ```
 
@@ -34,8 +34,8 @@ fn main() -> anyhow::Result<()> {
     let db_url = "fonts.db";
 
     // Scan directory and update the database
-    let new_fonts_count = update_font_database(font_dir, db_url)?;
-    println!("Added {} new fonts to the database.", new_fonts_count);
+    update_font_database(font_dir, db_url)?;
+    println!("Font database is up to date.");
 
     // Search for a font path by its family name
     let font_paths = select_font_by_name("Arial", db_url)?;
