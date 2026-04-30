@@ -645,24 +645,6 @@ checksum = "5baebc0774151f905a1a2cc41989300b1e6fbb29aff0ceffa1064fdd3088d582"
 
 [[package]]
 name = "flash-font"
-version = "0.1.1"
-source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "46d19e13279319f773fdc1f3812f72b07b9e059a27188cc77fceb83b9ba00d32"
-dependencies = [
- "camino",
- "diesel",
- "libc",
- "libsqlite3-sys",
- "memmap2",
- "rayon",
- "thiserror",
- "ttf-parser",
- "walkdir",
- "windows-sys",
-]
-
-[[package]]
-name = "flash-font"
 version = "0.2.0"
 dependencies = [
  "camino",
@@ -679,14 +661,14 @@ dependencies = [
 
 [[package]]
 name = "flash-font-ass"
-version = "0.2.1-alpha.1"
+version = "0.3.0"
 dependencies = [
  "anyhow",
  "ass-font",
  "camino",
  "clap",
  "etcetera",
- "flash-font 0.1.1",
+ "flash-font",
  "flash-font-injector",
  "inquire",
  "notify-rust",
