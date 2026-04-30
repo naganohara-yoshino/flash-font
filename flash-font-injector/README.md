@@ -4,7 +4,7 @@
 
 `flash-font-injector` is a low-level Rust library for temporarily loading system fonts. It provides a reliable mechanism to inject physical font files (e.g., `.ttf`, `.otf`) into the Windows system font table, making them available to local processes without permanently installing them.
 
-Used by [flash-font](https://github.com/naganohara-yoshino/flash-font).
+Used by [flash-font-ass](https://github.com/naganohara-yoshino/flash-font).
 
 ## Features
 
@@ -16,7 +16,7 @@ Used by [flash-font](https://github.com/naganohara-yoshino/flash-font).
 
 ```rust
 use flash_font_injector::{FontManager, FontManagerConfig};
-use camino::Utf8PathBuf;
+use camino::{Utf8Path, Utf8PathBuf};
 
 // By default, FontManager keeps fonts loaded after getting dropped.
 // We can configure it to clean up the fonts automatically:
@@ -24,7 +24,7 @@ let config = FontManagerConfig { keep_loaded_fonts: false };
 let mut manager = FontManager::new(config);
 
 // Load a single font
-manager.load("path/to/font.ttf".into()).unwrap();
+manager.load(Utf8Path::new("path/to/font.ttf")).unwrap();
 
 // Load multiple fonts in parallel
 let paths = vec![

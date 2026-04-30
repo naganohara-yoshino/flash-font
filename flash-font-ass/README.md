@@ -8,7 +8,8 @@ When provided with an ASS subtitle file, `flash-font-ass` will:
 1. Parse the subtitle using `ass-font` and extract all required fonts.
 2. Synchronize your underlying font database using `flash-font`.
 3. Query the database to find the physical paths for the required fonts.
-4. Temporarily inject those fonts into your Windows session using `flash-font-injector`.
+4. Skip fonts that are already available from the system font table.
+5. Temporarily inject the remaining fonts into your Windows session using `flash-font-injector`.
 
 ## Installation
 
@@ -24,11 +25,11 @@ Before you start using `flash-font-ass`, you must initialize the configuration. 
 flash-font-ass init
 ```
 
-The application will prompt you to enter the full absolute path to your font directory. This path will be saved along with an automatically determined location for the SQLite database (`fonts.db`).
+The application will prompt you to enter the full absolute path to your font directory and choose whether to show desktop notifications after fonts are loaded. These settings will be saved along with an automatically determined location for the SQLite database (`fonts.db`).
 
 ## Usage
 
-Once configured, you can load fonts for an ASS file before turning on your video player:
+Once configured, you can load fonts for an ASS file before starting your video player:
 
 ```bash
 flash-font-ass load --subtitle "path/to/subtitle.ass"
