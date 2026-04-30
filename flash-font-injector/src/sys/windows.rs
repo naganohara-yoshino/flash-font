@@ -3,7 +3,7 @@ use camino::Utf8Path;
 use widestring::WideCString;
 use windows::Win32::Foundation::{LPARAM, WPARAM};
 use windows::Win32::Graphics::Gdi::{
-    AddFontResourceW, DEFAULT_CHARSET, EnumFontFamiliesExW, GetDC, LOGFONTW, LF_FACESIZE,
+    AddFontResourceW, DEFAULT_CHARSET, EnumFontFamiliesExW, GetDC, LF_FACESIZE, LOGFONTW,
     ReleaseDC, RemoveFontResourceW, TEXTMETRICW,
 };
 use windows::Win32::UI::WindowsAndMessaging::{
